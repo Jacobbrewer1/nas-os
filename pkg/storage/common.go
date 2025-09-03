@@ -44,6 +44,7 @@ type FileInfo struct {
 
 func cleanPath(path string) string {
 	path = filepath.Clean(path)
+	path = strings.TrimSpace(path)
 	path = strings.ReplaceAll(path, " ", "_") // Replace spaces with underscores
 	return path
 }

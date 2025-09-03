@@ -285,7 +285,7 @@ func TestLocal_ListDirectory(t *testing.T) {
 
 		files, err := localBackend.ListDirectory("emptydir")
 		require.NoError(t, err)
-		require.Len(t, files, 0)
+		require.Empty(t, files)
 	})
 
 	t.Run("replaces spaces", func(t *testing.T) {
@@ -295,9 +295,9 @@ func TestLocal_ListDirectory(t *testing.T) {
 		localBackend := NewLocal(slog.New(slog.DiscardHandler), testDir)
 
 		// Create test files and directories with spaces
-		err := os.MkdirAll(filepath.Join(testDir, "/test_dir"), 0o755)
+		err := os.MkdirAll(filepath.Join(testDir, "test_dir"), 0o755)
 		require.NoError(t, err)
-		err = os.WriteFile(filepath.Join(testDir, "/test_dir/file_with_spaces.txt"), []byte("File with spaces"), 0o600)
+		err = os.WriteFile(filepath.Join(testDir, "test_dir", "file_with_spaces.txt"), []byte("File with spaces"), 0o600)
 		require.NoError(t, err)
 
 		files, err := localBackend.ListDirectory("test dir") // Intentional space in path
