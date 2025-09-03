@@ -1,0 +1,64 @@
+name: Docker
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  # Use docker.io for Docker Hub if empty
+  REGISTRY: ghcr.io
+  # github.repository as <account>/<repo>
+  IMAGE_NAME: ${{ github.repository }}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  docker-build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: "**/*.sum"
+
+      # Login against a Docker registry except on PR
+      # https://github.com/docker/login-action
+      - name: Log into registry
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Shorten hash
+        id: shorten_hash
+        run: |
+          echo "HASH=$(git rev-parse --short=7 HEAD)" >> $GITHUB_ENV
+
+      - name: Lowercase Image Name
+        run: echo "LOWER_IMAGE_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Build app
+        run: docker build -t ${{ env.REGISTRY }}/${{ env.LOWER_IMAGE_NAME }}:${{ env.HASH }} -t ${{ env.REGISTRY }}/${{ env.LOWER_IMAGE_NAME }}:latest .
+
+      - name: Push app
+        if: ${{ github.event_name != 'pull_request' }}
+        run: |
+          docker push ${{ env.REGISTRY }}/${{ env.LOWER_IMAGE_NAME }}:${{ env.HASH }}
+          docker push ${{ env.REGISTRY }}/${{ env.LOWER_IMAGE_NAME }}:latest

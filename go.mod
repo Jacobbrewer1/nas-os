@@ -4,12 +4,16 @@ go 1.24.0
 
 toolchain go1.24.4
 
-require github.com/jacobbrewer1/web v0.0.7
+require (
+	github.com/caarlos0/env/v10 v10.0.0
+	github.com/gorilla/mux v1.8.1
+	github.com/jacobbrewer1/web v0.0.7
+	github.com/magefile/mage v1.15.0
+)
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/caarlos0/env/v10 v10.0.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
@@ -28,7 +32,6 @@ require (
 	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect

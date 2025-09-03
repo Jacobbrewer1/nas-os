@@ -146,6 +146,7 @@ func (l Local) CreateDirectory(path string) error {
 	)
 
 	fullPath := filepath.Join(l.basePath, path)
+	fullPath = cleanPath(fullPath)
 	if err := os.MkdirAll(fullPath, 0o755); err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
@@ -184,7 +185,7 @@ func (l Local) GetFileInfo(path string) (*FileInfo, error) {
 
 	return &FileInfo{
 		Name:        info.Name(),
-		Path:        path,
+		Path:        cleanPath(path),
 		Size:        info.Size(),
 		IsDirectory: info.IsDir(),
 		ModTime:     info.ModTime(),
