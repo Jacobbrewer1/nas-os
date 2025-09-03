@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAS Interface - Web UI</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1, h2 {
+            color: #333;
+            border-bottom: 2px solid #007acc;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        input, button, select {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #007acc;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+        button:hover {
+            background-color: #005a9e;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .file-upload {
+            border: 2px dashed #007acc;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .file-list {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .file-item:last-child {
+            border-bottom: none;
+        }
+        .file-info {
+            flex-grow: 1;
+        }
+        .file-name {
+            font-weight: bold;
+            color: #333;
+        }
+        .file-details {
+            font-size: 12px;
+            color: #666;
+        }
+        .file-actions button {
+            padding: 5px 10px;
+            margin: 0 2px;
+            font-size: 12px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .path-nav {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+        .path-nav button {
+            margin-right: 5px;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .current-path {
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>🗂️ NAS Interface - Web UI</h1>
+
+    <div class="container">
+        <div class="path-nav">
+            <button onclick="navigateToPath('/')">🏠 Root</button>
+            <button onclick="goUp()">⬆️ Up</button>
+            <button onclick="refreshDirectory()">🔄 Refresh</button>
+            <span class="current-path" id="currentPath">/</span>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <div class="grid">
+        <div class="container">
+            <h2>📁 Directory Browser</h2>
+            <div class="section">
+                <div id="fileList" class="file-list">
+                    <div class="loading">Loading directory contents...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <h2>📤 File Upload</h2>
+            <div class="section">
+                <div class="file-upload" onclick="document.getElementById('fileInput').click()">
+                    <p>📎 Click here or drag files to upload</p>
+                    <input type="file" id="fileInput" multiple style="display: none;" onchange="handleFileSelect(event)">
+                </div>
+                <div>
+                    <input type="text" id="uploadPath" placeholder="Upload to path (optional)" style="width: 70%;">
+                    <button onclick="uploadFiles()" id="uploadBtn" disabled>Upload Files</button>
+                </div>
+                <div id="uploadStatus"></div>
+            </div>
+
+            <h2>📝 Create Directory</h2>
+            <div class="section">
+                <input type="text" id="dirName" placeholder="Directory name" style="width: 70%;">
+                <button onclick="createDirectory()">Create Dir</button>
+            </div>
+
+            <h2>🔗 Quick Actions</h2>
+            <div class="section">
+                <button onclick="checkHealth()">🏥 Health Check</button>
+                <button onclick="showLogs()">📋 Show Logs</button>
+                <button onclick="clearStorage()">🗑️ Clear All Files</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Server Logs</h2>
+        <div id="logs" style="background-color: #1e1e1e; color: #00ff00; padding: 15px; border-radius: 4px; font-family: monospace; height: 200px; overflow-y: scroll; display: none;">
+            <div>Server logs will appear here...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://{{.SMBTarget}}'
+        let currentPath = '/';
+        let selectedFiles = [];
+
+        // Initialize the UI
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshDirectory();
+            setupDragAndDrop();
+        });
+
+        // Navigation functions
+        function navigateToPath(path) {
+            currentPath = path;
+            document.getElementById('currentPath').textContent = path;
+            refreshDirectory();
+        }
+
+        function goUp() {
+            if (currentPath === '/') return;
+            const parts = currentPath.split('/').filter(p => p);
+            parts.pop();
+            currentPath = parts.length ? '/' + parts.join('/') : '/';
+            document.getElementById('currentPath').textContent = currentPath;
+            refreshDirectory();
+        }
+
+        // Directory listing
+        async function refreshDirectory() {
+            showStatus('Loading directory...', 'info');
+            try {
+                const response = await fetch(`${API_BASE}/list${currentPath}`);
+                const files = await response.json();
+
+                // Store current files globally and normalize field names
+                window.currentFiles = files.map(file => ({
+                    ...file,
+                    IsDirectory: file.is_directory || file.IsDirectory || false
+                }));
+
+                displayFileList(window.currentFiles);
+                showStatus(`Loaded ${files.length} items`, 'success');
+            } catch (error) {
+                showStatus(`Error loading directory: ${error.message}`, 'error');
+                console.error('Error:', error);
+            }
+        }
+
+        function displayFileList(files) {
+            const fileList = document.getElementById('fileList');
+
+            if (files.length === 0) {
+                fileList.innerHTML = '<div class="loading">Directory is empty</div>';
+                return;
+            }
+
+            fileList.innerHTML = files.map(file => {
+                // Ensure proper path formatting with leading slash
+                const filePath = file.Path || file.path || '';
+                const normalizedPath = filePath.startsWith('/') ? filePath : `/${filePath}`;
+
+                return `
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-name">
+                            ${file.IsDirectory ? '📁' : '📄'}
+                            ${file.IsDirectory ?
+                                `<a href="#" onclick="navigateToPath('${normalizedPath}')">${file.Name || file.name}</a>` :
+                                (file.Name || file.name)
+                            }
+                        </div>
+                        <div class="file-details">
+                            Size: ${formatFileSize(file.Size || file.size || 0)} |
+                            Modified: ${new Date(file.ModTime || file.mod_time).toLocaleString()}
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        ${!file.IsDirectory ? `<button onclick="downloadFile('${normalizedPath}')">⬇️ Download</button>` : ''}
+                        <button onclick="getFileInfo('${normalizedPath}')">ℹ️ Info</button>
+                        <button onclick="deleteItem('${normalizedPath}')" style="background-color: #dc3545;">🗑️ Delete</button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        // File operations
+        async function downloadFile(path) {
+            try {
+                const response = await fetch(`${API_BASE}/files${path}`);
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = path.split('/').pop();
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                showStatus(`Downloaded: ${path}`, 'success');
+            } catch (error) {
+                showStatus(`Error downloading file: ${error.message}`, 'error');
+            }
+        }
+
+        async function deleteItem(path) {
+            if (!confirm(`Are you sure you want to delete: ${path}?`)) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/delete${path}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.text();
+                showStatus(result, 'success');
+                refreshDirectory();
+            } catch (error) {
+                showStatus(`Error deleting: ${error.message}`, 'error');
+            }
+        }
+
+        async function getFileInfo(path) {
+            try {
+                const response = await fetch(`${API_BASE}/info${path}`);
+                const info = await response.json();
+
+                // Normalize field names to handle both snake_case and PascalCase
+                const normalizedInfo = {
+                    Name: info.name || info.Name || 'Unknown',
+                    Size: info.size || info.Size || 0,
+                    IsDirectory: info.is_directory || info.IsDirectory || false,
+                    ModTime: info.mod_time || info.ModTime,
+                    Mode: info.mode || info.Mode || 0
+                };
+
+                alert(`File Info for ${path}:\n\n` +
+                    `Name: ${normalizedInfo.Name}\n` +
+                    `Size: ${formatFileSize(normalizedInfo.Size)}\n` +
+                    `Type: ${normalizedInfo.IsDirectory ? 'Directory' : 'File'}\n` +
+                    `Modified: ${new Date(normalizedInfo.ModTime).toLocaleString()}\n` +
+                    `Permissions: ${normalizedInfo.Mode}`
+                );
+            } catch (error) {
+                showStatus(`Error getting file info: ${error.message}`, 'error');
+            }
+        }
+
+        // File upload
+        function handleFileSelect(event) {
+            selectedFiles = Array.from(event.target.files);
+            document.getElementById('uploadBtn').disabled = selectedFiles.length === 0;
+            showStatus(`Selected ${selectedFiles.length} file(s)`, 'info');
+        }
+
+        async function uploadFiles() {
+            if (selectedFiles.length === 0) return;
+
+            const uploadPath = document.getElementById('uploadPath').value || currentPath;
+            const uploadedFiles = [];
+
+            for (const file of selectedFiles) {
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    const response = await fetch(`${API_BASE}/upload${uploadPath}`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        const fileInfo = await response.json();
+                        // Normalize field names to match UI expectations
+                        const normalizedFileInfo = {
+                            ...fileInfo,
+                            Name: fileInfo.name || fileInfo.Name,
+                            Path: fileInfo.path || fileInfo.Path,
+                            Size: fileInfo.size || fileInfo.Size || 0,
+                            IsDirectory: fileInfo.is_directory || fileInfo.IsDirectory || false,
+                            ModTime: fileInfo.mod_time || fileInfo.ModTime,
+                            Mode: fileInfo.mode || fileInfo.Mode
+                        };
+                        uploadedFiles.push(normalizedFileInfo);
+                        showStatus(`Uploaded: ${file.name}`, 'success');
+                    } else {
+                        showStatus(`Error uploading ${file.name}: ${response.statusText}`, 'error');
+                    }
+                } catch (error) {
+                    showStatus(`Error uploading ${file.name}: ${error.message}`, 'error');
+                }
+            }
+
+            // Clear selection
+            selectedFiles = [];
+            document.getElementById('fileInput').value = '';
+            document.getElementById('uploadBtn').disabled = true;
+
+            // If we uploaded files to the current directory, add them to the current file list
+            if (uploadedFiles.length > 0 && (uploadPath === currentPath || uploadPath === '')) {
+                // Get current files and add the new ones
+                const currentFiles = window.currentFiles || [];
+                const updatedFiles = [...currentFiles, ...uploadedFiles];
+
+                // Sort files: directories first, then by name
+                updatedFiles.sort((a, b) => {
+                    if (a.IsDirectory !== b.IsDirectory) {
+                        return a.IsDirectory ? -1 : 1;
+                    }
+                    return (a.Name || '').localeCompare(b.Name || '');
+                });
+
+                window.currentFiles = updatedFiles;
+                displayFileList(updatedFiles);
+            } else {
+                // If uploaded to different directory, refresh current directory
+                refreshDirectory();
+            }
+        }
+
+        // Directory creation
+        async function createDirectory() {
+            const dirName = document.getElementById('dirName').value.trim();
+            if (!dirName) {
+                showStatus('Please enter a directory name', 'error');
+                return;
+            }
+
+            const fullPath = currentPath === '/' ? `/${dirName}` : `${currentPath}/${dirName}`;
+
+            try {
+                const response = await fetch(`${API_BASE}/mkdir${fullPath}`, {
+                    method: 'POST'
+                });
+                const result = await response.text();
+                showStatus(result, 'success');
+                document.getElementById('dirName').value = '';
+                refreshDirectory();
+            } catch (error) {
+                showStatus(`Error creating directory: ${error.message}`, 'error');
+            }
+        }
+
+        // Utility functions
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const health = await response.json();
+                showStatus(`Server Status: ${health.status} (${health.timestamp})`, 'success');
+            } catch (error) {
+                showStatus(`Health check failed: ${error.message}`, 'error');
+            }
+        }
+
+        function showLogs() {
+            const logsDiv = document.getElementById('logs');
+            logsDiv.style.display = logsDiv.style.display === 'none' ? 'block' : 'none';
+
+            if (logsDiv.style.display === 'block') {
+                // In a real implementation, you'd fetch logs from the server
+                logsDiv.innerHTML = `
+                    <div>[${new Date().toISOString()}] NAS Interface - Server Running</div>
+                    <div>[${new Date().toISOString()}] Cloud Provider: {{.Provider}}</div>
+                    <div>[${new Date().toISOString()}] Listening at {{.SMBTarget}}</div>
+                    <div style="color: #ffff00;">[INFO] Check browser developer console for real-time API logs</div>
+                `;
+            }
+        }
+
+        async function clearStorage() {
+            if (!confirm('Are you sure you want to delete ALL files? This cannot be undone!')) return;
+
+            // This would need to be implemented on the server side
+            showStatus('Clear storage feature would need server implementation', 'error');
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+
+            setTimeout(() => {
+                statusDiv.className = '';
+                statusDiv.textContent = '';
+            }, 5000);
+        }
+
+        // Drag and drop setup
+        function setupDragAndDrop() {
+            const fileUploadDiv = document.querySelector('.file-upload');
+            fileUploadDiv.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                fileUploadDiv.classList.add('drag-over');
+            });
+
+            fileUploadDiv.addEventListener('dragleave', () => {
+                fileUploadDiv.classList.remove('drag-over');
+            });
+
+            fileUploadDiv.addEventListener('drop', (e) => {
+                e.preventDefault();
+                fileUploadDiv.classList.remove('drag-over');
+
+                const files = Array.from(e.dataTransfer.files);
+                document.getElementById('fileInput').files = e.dataTransfer.files;
+                handleFileSelect({ target: { files: e.dataTransfer.files } });
+            });
+        }
+    </script>
+</body>
+</html>
