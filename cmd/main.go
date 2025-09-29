@@ -23,9 +23,9 @@ const (
 type (
 	// AppConfig holds the application configuration settings.
 	AppConfig struct {
-		StorageMechanism string `env:"STORAGE_MECHANISM" envDefault:"local"`        // e.g., "local", "s3"
-		StoragePath      string `env:"STORAGE_PATH" envDefault:"./brewer/data/nas"` // Path for local storage or S3 bucket name
-		Port             string `env:"PORT" envDefault:"8080"`                      // Port to run the server on
+		StorageMechanism string `env:"STORAGE_MECHANISM" envDefault:"local"`    // e.g., "local", "s3"
+		StoragePath      string `env:"STORAGE_PATH" envDefault:"/tmp/data/nas"` // Path for local storage or S3 bucket name
+		Port             string `env:"PORT" envDefault:"8080"`                  // Port to run the server on
 	}
 
 	// App represents the main application structure.
