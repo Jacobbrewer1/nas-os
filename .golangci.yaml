@@ -102,12 +102,6 @@ linters:
           alias: pkgslices
         - pkg: github.com/jacobbrewer1/web/sync
           alias: pkgsync
-        - pkg: github.com/jacobbrewer1/storepro-go/pkg/utils/testing
-          alias: testutils
-        - pkg: github.com/k3d-io/k3d/v5/pkg/types
-          alias: k3dcommon
-        - pkg: github.com/jacobbrewer1/storepro-go/pkg/http
-          alias: pkghttp
   exclusions:
     generated: lax
     presets:

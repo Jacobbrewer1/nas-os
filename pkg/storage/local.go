@@ -15,7 +15,7 @@ func IsLocalStorage(mechanism string) bool {
 func EnsureLocalPath(path string) error {
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
-		if err := os.MkdirAll(path, 0755); err != nil {
+		if err := os.MkdirAll(path, 0o755); err != nil {
 			return err
 		}
 	} else if err != nil {
