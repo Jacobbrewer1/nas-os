@@ -88,20 +88,7 @@ func (a *App) Start() error {
 				Prefix:     "/",
 				FileSystem: storageHandler.FileSystem(),
 				LockSystem: storageHandler.LockSystem(),
-				Logger: func(request *http.Request, err error) {
-					if err != nil {
-						l.Error("webdav error",
-							slog.String("method", request.Method),
-							slog.String("url", request.URL.String()),
-							slog.Any(logging.KeyError, err),
-						)
-					} else {
-						l.Info("webdav request",
-							slog.String("method", request.Method),
-							slog.String("url", request.URL.String()),
-						)
-					}
-				},
+				Logger:     davRequestLogger(logging.LoggerWithComponent(l, "http")),
 			}
 			return nil
 		}),
