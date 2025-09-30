@@ -16,7 +16,7 @@ func EnsureLocalPath(path string) error {
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		if err := os.MkdirAll(path, 0o755); err != nil {
-			return err
+			return fmt.Errorf("failed to create directory %s: %w", path, err)
 		}
 	} else if err != nil {
 		return fmt.Errorf("failed to stat path %s: %w", path, err)
